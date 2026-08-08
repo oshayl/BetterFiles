@@ -1,0 +1,137 @@
+/*
+ * Global reset and panel chrome.
+ *
+ * Everything here is restricted to CSS that Photoshop UXP actually implements:
+ * flexbox, box model, borders, background, text and overflow. No grid, no
+ * aspect-ratio, no box-shadow, no transition/transform, no float.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /*
+   * Neutral fallback only. The real colours live on `.app`, which carries the
+   * theme class - custom properties are defined there, not on body.
+   */
+  background-color: #f7f7f7;
+  font-family: var(--font-ui);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-regular);
+  overflow: hidden;
+}
+
+#root {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Theme scope and layout root. */
+.app {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/*
+ * Thumbnail backdrops.
+ *
+ * The roadmap specified four layered linear-gradients (section 29); UXP does not
+ * support multiple background layers reliably, so the checkerboard is a 2x2 PNG
+ * tiled with background-size instead. Same visual result, supported primitives.
+ *
+ * The backdrop is user-selectable and INDEPENDENT of the UI theme, because the
+ * artwork decides what is readable: a black SVG disappears on a dark backdrop, a
+ * white one disappears on a light backdrop.
+ */
+.thumb-bg-checker {
+  background-repeat: repeat;
+  background-size: 12px 12px;
+}
+
+.theme-light .thumb-bg-checker {
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAF0lEQVR42mP4////kydPGJ48efL//38AT0wLU+khUSMAAAAASUVORK5CYII=');
+}
+
+.theme-dark .thumb-bg-checker {
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR42mOQkZERERFhEBERkZGRAQAH7gEhiYl/7QAAAABJRU5ErkJggg==');
+}
+
+/* Solid backdrops, for artwork that vanishes against a checker. */
+.thumb-bg-light {
+  background-color: var(--color-thumb-light);
+}
+
+.thumb-bg-dark {
+  background-color: var(--color-thumb-dark);
+}
+
+/* Section headings: uppercase, tracked, muted (section 8.4). */
+.section-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+/*
+ * Focus. Accessibility (section 32) requires a visible focus ring, and because
+ * the palette is monochrome the ring must be a shape change, not a hue change.
+ */
+:focus {
+  outline: 1px solid var(--color-active);
+  outline-offset: -1px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Text inputs inherit nothing useful in UXP; normalise them explicitly. */
+input,
+textarea {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-md);
+}
+
+input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Scrollable regions. */
+.scroll-y {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.scroll-both {
+  overflow: auto;
+}
+
+/* Single-line truncation used across cards, rows and paths. */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

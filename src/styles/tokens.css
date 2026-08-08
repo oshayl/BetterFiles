@@ -1,0 +1,146 @@
+/*
+ * Design tokens (roadmap sections 8.2 and 28).
+ *
+ * UXP CONSTRAINTS THAT SHAPE THIS FILE:
+ *   - No `transition` / `transform`: state changes are instant. The transition
+ *     tokens are kept for documentation and future UXP versions, but nothing
+ *     may *depend* on them animating.
+ *   - No `@font-face`: fonts must already exist on the system, so the stack is
+ *     ordered by what ships with macOS and Windows.
+ *   - No `box-shadow`: elevation is expressed with borders and surface value.
+ *
+ * THEMING
+ * Colour tokens live under `.theme-light` / `.theme-dark`, applied to the app
+ * wrapper. Custom properties inherit, so every component reads the same names
+ * regardless of theme. Non-colour tokens are theme-independent and stay in
+ * `:root`.
+ *
+ * Both themes are monochrome. Per section 8.2, status is never carried by hue -
+ * it is carried by contrast, border, icon and label.
+ */
+
+:root {
+  /* Radii - sharp by design (section 8.5): 0-4px only, no pills. */
+  --radius-none: 0;
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+
+  /* Spacing scale. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /*
+   * Inter is preferred but cannot be loaded (no @font-face in UXP), so it only
+   * applies when the user has it installed. The rest covers macOS and Windows.
+   */
+  --font-ui:
+    Inter, 'SF Pro Text', 'SF Pro Display', -apple-system, 'Segoe UI',
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Cascadia Mono', Consolas, 'Courier New', monospace;
+
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
+  --font-size-md: 12px;
+  --font-size-lg: 14px;
+  --font-size-xl: 15px;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 550;
+  --font-weight-semibold: 650;
+  --font-weight-bold: 700;
+
+  --letter-spacing-label: 0.12em;
+  --letter-spacing-button: 0.06em;
+
+  /*
+   * Fixed chrome heights (section 8.1: dense, technical).
+   *
+   * MUST match CHROME in utils/layout.ts - the grid height is computed from
+   * those numbers, so a mismatch makes the grid scroll too far or too little.
+   */
+  --height-header: 24px;
+  --height-search: 24px;
+  --height-toolbar: 24px;
+  --height-preview-strip: 20px;
+  --height-action-bar: 30px;
+  --height-notification: 28px;
+  --height-row: 20px;
+  --height-control: 18px;
+
+  --sidebar-width-min: 110px;
+  --sidebar-width-max: 280px;
+
+  --preview-height-min: 110px;
+
+  /* Retained for documentation; UXP does not animate these today. */
+  --transition-fast: 100ms ease;
+  --transition-standard: 160ms ease;
+}
+
+/*
+ * Light theme - the default.
+ *
+ * Chosen because asset libraries are dominated by dark artwork on transparency:
+ * a black SVG or logo is effectively invisible on a dark panel.
+ */
+.theme-light {
+  --color-bg: #f7f7f7;
+  --color-panel: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f0f0f0;
+  --color-surface-selected: #e6e6e6;
+  --color-surface-raised: #ffffff;
+
+  --color-text: #0a0a0a;
+  --color-text-secondary: #3d3d3d;
+  --color-text-muted: #767676;
+  --color-text-disabled: #b0b0b0;
+  --color-text-inverse: #ffffff;
+
+  --color-border: #dcdcdc;
+  --color-border-strong: #9a9a9a;
+  --color-border-active: #000000;
+  --color-active: #000000;
+
+  --color-danger: #000000;
+  --color-danger-surface: #ebebeb;
+
+  /* Backdrop used when the thumbnail background is set to "light". */
+  --color-thumb-light: #ffffff;
+  --color-thumb-dark: #1a1a1a;
+  --color-checker-a: #ffffff;
+  --color-checker-b: #e4e4e4;
+}
+
+.theme-dark {
+  --color-bg: #090909;
+  --color-panel: #0d0d0d;
+  --color-surface: #141414;
+  --color-surface-hover: #1a1a1a;
+  --color-surface-selected: #202020;
+  --color-surface-raised: #242424;
+
+  --color-text: #ffffff;
+  --color-text-secondary: #c6c6c6;
+  --color-text-muted: #7d7d7d;
+  --color-text-disabled: #555555;
+  --color-text-inverse: #000000;
+
+  --color-border: #292929;
+  --color-border-strong: #4b4b4b;
+  --color-border-active: #ffffff;
+  --color-active: #ffffff;
+
+  --color-danger: #ffffff;
+  --color-danger-surface: #2a2a2a;
+
+  --color-thumb-light: #ffffff;
+  --color-thumb-dark: #1a1a1a;
+  --color-checker-a: #1c1c1c;
+  --color-checker-b: #141414;
+}

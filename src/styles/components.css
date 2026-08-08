@@ -1,0 +1,1339 @@
+/*
+ * Component styles.
+ *
+ * UXP-SUPPORTED CSS ONLY. See docs/UXP-CONSTRAINTS.md. In particular:
+ *   - no `display: grid`      -> the asset grid is flex rows of fixed-width tiles
+ *   - no `aspect-ratio`       -> thumbnail height is set inline from JS
+ *   - no `box-shadow`         -> selection uses border + outline
+ *   - no `transition`         -> all state changes are instant
+ *   - no `position: fixed`    -> overlays are absolutely positioned
+ */
+
+/* ---------------------------------------------------------------- header -- */
+
+.panel-header {
+  display: flex;
+  height: var(--height-header);
+  align-items: center;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-panel);
+}
+
+.panel-header__title {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+.panel-header__status {
+  overflow: hidden;
+  max-width: 180px;
+  margin-left: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------- buttons -- */
+
+.button {
+  display: flex;
+  height: var(--height-control);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-button);
+  text-transform: uppercase;
+}
+
+.button:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-active);
+}
+
+/*
+ * `[data-disabled]` accompanies `[disabled]` throughout: controls that need
+ * custom layout are divs, not buttons, because UXP renders a native button and
+ * ignores the CSS box. See components/controls/Pressable.tsx.
+ */
+.button[disabled],
+.button[data-disabled='true'] {
+  border-color: var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-disabled);
+}
+
+/* A disabled control must not react to the pointer either. */
+.button[data-disabled='true']:hover {
+  border-color: var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.button--primary {
+  background-color: var(--color-active);
+  border-color: var(--color-active);
+  color: var(--color-text-inverse);
+  font-weight: var(--font-weight-bold);
+}
+
+.button--primary:hover {
+  background-color: var(--muted-white, #d8d8d8);
+  border-color: #d8d8d8;
+}
+
+.button--primary[disabled],
+.button--primary[data-disabled='true'],
+.button--primary[data-disabled='true']:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-disabled);
+}
+
+.button--icon {
+  width: var(--height-control);
+  padding: 0;
+}
+
+.button--ghost {
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+}
+
+.button--ghost:hover {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.button--ghost[data-active='true'] {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface-selected);
+  color: var(--color-text);
+}
+
+/* ------------------------------------------------------------ boot state -- */
+
+.boot {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.boot__message {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+}
+
+.boot__detail {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* ------------------------------------------------------------ search bar -- */
+
+.search-bar {
+  display: flex;
+  height: var(--height-search);
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-panel);
+}
+
+.search-bar__icon {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.search-bar__input {
+  min-width: 0;
+  height: 20px;
+  flex: 1 1 auto;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+}
+
+.search-bar__input:focus {
+  border-color: var(--color-active);
+  background-color: var(--color-surface);
+  outline: none;
+}
+
+.search-bar__count {
+  flex-shrink: 0;
+  padding: 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.search-bar__clear {
+  display: flex;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.search-bar__clear:hover {
+  color: var(--color-text);
+}
+
+/* --------------------------------------------------------------- toolbar -- */
+
+.toolbar {
+  display: flex;
+  height: var(--height-toolbar);
+  align-items: center;
+  padding: 0 var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-panel);
+  gap: 2px;
+}
+
+/* Text glyph used where a drawn icon would be overkill. */
+.toolbar__glyph {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+}
+
+.toolbar__count {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* Filter chips - the one place a pill shape is allowed (section 8.5). */
+.chip {
+  height: 18px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.chip:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text-secondary);
+}
+
+.chip[data-active='true'] {
+  border-color: var(--color-active);
+  background-color: var(--color-active);
+  color: var(--color-text-inverse);
+  font-weight: var(--font-weight-semibold);
+}
+
+.select {
+  height: var(--height-control);
+  max-width: 130px;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+}
+
+/*
+ * The two dropdowns share the control row and must not crowd out the icon
+ * buttons on a narrow panel, so they are allowed to shrink.
+ */
+.select--filter {
+  min-width: 52px;
+  max-width: 92px;
+  flex: 1 1 auto;
+}
+
+.select--sort {
+  min-width: 46px;
+  max-width: 78px;
+  flex: 1 1 auto;
+}
+
+.slider {
+  width: 70px;
+  margin: 0 var(--space-2);
+}
+
+/* --------------------------------------------------------------- sidebar -- */
+
+/*
+ * `flex: 0 0 auto` throughout the scroll chain is deliberate.
+ *
+ * These elements receive an explicit inline pixel height from utils/layout.ts.
+ * Leaving them as `flex: 1 1 auto` lets the flex algorithm stretch or shrink
+ * them away from that height, and in UXP the result is a container that grows
+ * to fit its content and can never scroll.
+ */
+.workspace {
+  display: flex;
+  overflow: hidden;
+  flex: 0 0 auto;
+  flex-direction: row;
+}
+
+.content {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-border);
+  background-color: var(--color-panel);
+}
+
+.sidebar__header {
+  padding: var(--space-2) var(--space-2) var(--space-1);
+}
+
+/* Height comes from layout.ts; see the note on .workspace. */
+.sidebar__tree {
+  flex: 0 0 auto;
+}
+
+.sidebar__empty {
+  padding: var(--space-3) var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.sidebar__actions {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+/* The scan entry point is secondary to Add Folder, so it takes less room. */
+.sidebar__add--scan {
+  flex-shrink: 0;
+  padding: 0 var(--space-2);
+  border-left: 1px solid var(--color-border);
+  letter-spacing: var(--letter-spacing-label);
+}
+
+.sidebar__add {
+  display: flex;
+  height: 26px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  /* The top rule belongs to .sidebar__actions, which now wraps both buttons. */
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  gap: var(--space-1);
+  letter-spacing: var(--letter-spacing-button);
+}
+
+.sidebar__add:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+/* ------------------------------------------------------------ categories -- */
+
+.category {
+  margin-bottom: var(--space-2);
+}
+
+.category__header {
+  display: flex;
+  height: 20px;
+  align-items: center;
+  padding: 0 var(--space-2);
+  gap: var(--space-1);
+}
+
+.category__name {
+  min-width: 0;
+  overflow: hidden;
+  flex: 1 1 auto;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-label);
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.category__count {
+  color: var(--color-text-disabled);
+  font-size: var(--font-size-xs);
+}
+
+/* Category chooser shown on import. */
+.category-options {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+  gap: var(--space-1);
+}
+
+.chip--large {
+  height: 24px;
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.text-input {
+  height: var(--height-control);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-md);
+}
+
+/* ------------------------------------------------------------ folder tree -- */
+
+.tree-row {
+  display: flex;
+  height: var(--height-row);
+  align-items: center;
+  padding: 0 var(--space-1) 0 var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  gap: 4px;
+}
+
+.tree-row:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.tree-row[data-active='true'] {
+  background-color: var(--color-surface-selected);
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+}
+
+.tree-row__twisty {
+  display: flex;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.tree-row__twisty-blank {
+  display: block;
+  width: 11px;
+  height: 11px;
+}
+
+.tree-row__label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-row__count {
+  flex-shrink: 0;
+  color: var(--color-text-disabled);
+  font-size: var(--font-size-xs);
+}
+
+.tree-row__menu {
+  width: 16px;
+  flex-shrink: 0;
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.tree-row__menu:hover {
+  color: var(--color-text);
+}
+
+.tree-row__reconnect {
+  width: 100%;
+  padding: 2px var(--space-2) 4px 26px;
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  text-align: left;
+  text-decoration: underline;
+}
+
+.tree-row__reconnect:hover {
+  color: var(--color-text);
+}
+
+.tree-menu {
+  display: flex;
+  flex-direction: column;
+  margin: 0 var(--space-1) var(--space-1) 20px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface-raised);
+}
+
+.tree-menu button,
+.action-menu button {
+  padding: 5px var(--space-2);
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  text-align: left;
+}
+
+.tree-menu button:hover,
+.action-menu button:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+/* ------------------------------------------------------------ asset grid -- */
+
+/* Height comes from layout.ts; see the note on .workspace. */
+.asset-grid {
+  flex: 0 0 auto;
+  padding: var(--space-2);
+}
+
+.asset-grid__row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.asset-list__row-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.asset-card {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+}
+
+.asset-card:hover {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface-hover);
+}
+
+/*
+ * Selected state. The roadmap specified an inset box-shadow ring; UXP has no
+ * box-shadow, so this uses a white border plus an outline to get an equivalent
+ * two-tone edge that reads clearly against any thumbnail.
+ */
+.asset-card[data-selected='true'] {
+  border-color: var(--color-active);
+  background-color: var(--color-surface-selected);
+  outline: 1px solid var(--color-active);
+  outline-offset: -2px;
+}
+
+.asset-thumb {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.asset-thumb__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.asset-thumb__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  gap: 2px;
+}
+
+.asset-thumb__ext {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+}
+
+.asset-thumb__pending {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.1em;
+}
+
+/*
+ * Badge and favourite overlay the artwork. On a small tile that is a lot of
+ * clutter over the thing you are actually trying to look at, so both stay
+ * subdued until the tile is hovered or selected.
+ */
+.asset-card__badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  padding: 0 2px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 8px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+}
+
+.asset-card:hover .asset-card__badge,
+.asset-card[data-selected='true'] .asset-card__badge {
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+.asset-card__favorite {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: flex;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-xs);
+  background-color: transparent;
+  color: var(--color-text-muted);
+  opacity: 0;
+}
+
+/* A favourited asset always shows its star, hovered or not. */
+.asset-card:hover .asset-card__favorite,
+.asset-card[data-selected='true'] .asset-card__favorite,
+.asset-card__favorite[data-active='true'] {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  opacity: 1;
+}
+
+.asset-card__meta {
+  padding: 3px 5px;
+  border-top: 1px solid var(--color-border);
+}
+
+.asset-card__name {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.asset-card__details {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* ---------------------------------------------------------- type groups -- */
+
+/*
+ * Section heading in grouped mode. Height must stay in sync with
+ * GROUP_HEADER_HEIGHT in utils/virtualization.ts, or the virtual window and the
+ * rendered rows disagree and the grid drifts while scrolling.
+ */
+.asset-group__header {
+  display: flex;
+  height: 22px;
+  align-items: center;
+  padding: 0 var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-2);
+  gap: var(--space-2);
+}
+
+.asset-group__label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+.asset-group__count {
+  color: var(--color-text-disabled);
+  font-size: var(--font-size-xs);
+}
+
+/* ------------------------------------------------------------- list mode -- */
+
+.asset-row {
+  display: flex;
+  height: 24px;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  gap: var(--space-2);
+}
+
+.asset-row:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.asset-row[data-selected='true'] {
+  background-color: var(--color-surface-selected);
+  border-bottom-color: var(--color-border-strong);
+  color: var(--color-text);
+  outline: 1px solid var(--color-active);
+  outline-offset: -1px;
+}
+
+.asset-row__favorite {
+  display: flex;
+  width: 14px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.asset-row__favorite[data-active='true'] {
+  color: var(--color-text);
+}
+
+.asset-row__name {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.asset-row__badge {
+  width: 34px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: 9px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.06em;
+}
+
+.asset-row__size {
+  width: 60px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-align: right;
+}
+
+.asset-row__date {
+  width: 84px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-align: right;
+}
+
+/* --------------------------------------------------------------- preview -- */
+
+/*
+ * No border here: the rule belongs to the strip below. `.preview` has no
+ * explicit height, so a border on it is height the layout cannot see - see the
+ * note on measured chrome in utils/layout.ts.
+ */
+.preview {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  background-color: var(--color-panel);
+}
+
+/*
+ * Collapsed strip - always present so the toggle never moves, and so the
+ * current selection is named even when the preview itself is closed.
+ *
+ * Carries the panel's top rule, and is measured as `previewStrip`, so its
+ * border is counted in the layout arithmetic.
+ */
+.preview__strip {
+  display: flex;
+  width: 100%;
+  height: var(--height-preview-strip);
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border: none;
+  border-top: 1px solid var(--color-border);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-ui);
+  gap: var(--space-2);
+  text-align: left;
+}
+
+.preview__strip:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.preview__strip-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.preview__strip-meta {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* Expanded stage. Height is set inline; see utils/layout.ts. */
+.preview__body {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preview__empty {
+  padding: var(--space-4);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.preview__stage {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: 0 var(--space-2) var(--space-1);
+  border: 1px solid var(--color-border);
+}
+
+.preview__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.preview__unavailable {
+  align-items: center;
+  padding: var(--space-3);
+  color: var(--color-text-muted);
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.preview__ext {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.1em;
+}
+
+.preview__reason {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  gap: var(--space-1);
+}
+
+.preview__retry {
+  height: 20px;
+}
+
+.preview__meta {
+  flex-shrink: 0;
+  padding: var(--space-2);
+}
+
+.preview__name {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.preview__line {
+  margin-top: 2px;
+  font-size: var(--font-size-xs);
+}
+
+/* ------------------------------------------------------------ action bar -- */
+
+.action-bar {
+  position: relative;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-panel);
+}
+
+.action-bar__row {
+  display: flex;
+  height: var(--height-action-bar);
+  align-items: center;
+  padding: 0 var(--space-2);
+}
+
+/* Primary action is taller than the dense chrome around it - it is the point. */
+.action-bar__row .button {
+  height: 22px;
+}
+
+.action-menu {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--height-action-bar);
+  display: flex;
+  min-width: 200px;
+  flex-direction: column;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface-raised);
+}
+
+/* ---------------------------------------------------------- notification -- */
+
+.notification {
+  display: flex;
+  height: var(--height-notification);
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-top: 1px solid var(--color-border-strong);
+  background-color: var(--color-surface-raised);
+  gap: var(--space-2);
+}
+
+/*
+ * Errors are distinguished by a left rule and weight, not by hue - the palette
+ * is monochrome and section 8.2 forbids colour-only status.
+ */
+.notification[data-kind='error'] {
+  border-left: 3px solid var(--color-danger);
+}
+
+.notification__text {
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+}
+
+.notification__close {
+  flex-shrink: 0;
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+}
+
+.notification__close:hover {
+  color: var(--color-text);
+}
+
+/* ---------------------------------------------------------------- states -- */
+
+.state {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.state__icon {
+  margin-bottom: var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.state__title {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.state__detail {
+  max-width: 280px;
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+}
+
+.state__action {
+  margin-top: var(--space-4);
+}
+
+/* ---------------------------------------------------------------- dialog -- */
+
+/*
+ * Absolutely positioned rather than fixed: UXP panels are their own root, so
+ * covering the panel is what is wanted, and `position: fixed` is unreliable.
+ */
+.dialog {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg);
+}
+
+.dialog__header {
+  display: flex;
+  height: var(--height-header);
+  align-items: center;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dialog__title {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.dialog__tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tab {
+  height: 24px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-button);
+  text-transform: uppercase;
+}
+
+.tab[data-active='true'] {
+  border-bottom-color: var(--color-active);
+  color: var(--color-text);
+}
+
+.dialog__body {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: var(--space-3);
+}
+
+.dialog__section {
+  margin-bottom: var(--space-5);
+}
+
+.dialog__section .section-label {
+  margin-bottom: var(--space-2);
+}
+
+.dialog__section .button {
+  margin-top: var(--space-2);
+}
+
+.dialog__note {
+  margin: var(--space-1) 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------- bulk import -- */
+
+/*
+ * The dialog's own note and toolbar sit outside the scroll region, because the
+ * list gets an explicit height and everything around it must be fixed.
+ */
+.bulk-toolbar {
+  height: 24px;
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.bulk-toolbar__count {
+  font-size: var(--font-size-xs);
+}
+
+.bulk-list {
+  padding: 0 var(--space-2);
+}
+
+.bulk-row {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.bulk-row[data-disabled='true'] {
+  color: var(--color-text-disabled);
+}
+
+.bulk-row__name {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.bulk-row__count,
+.bulk-row__note {
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+}
+
+.bulk-row__path {
+  margin: 2px 0 var(--space-1) 26px;
+  font-size: var(--font-size-xs);
+}
+
+.bulk-row__category {
+  width: 100%;
+  height: 20px;
+  font-size: var(--font-size-sm);
+}
+
+/* A div, not <input type="checkbox">: UXP styles native controls its own way. */
+.checkbox {
+  display: flex;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  line-height: 1;
+}
+
+.checkbox[data-active='true'] {
+  border-color: var(--color-active);
+  background-color: var(--color-active);
+  color: var(--color-text-inverse);
+}
+
+.checkbox[data-disabled='true'] {
+  border-color: var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-disabled);
+}
+
+.field {
+  display: flex;
+  margin-bottom: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  gap: var(--space-2);
+}
+
+.field__label {
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* ----------------------------------------------------------- quick tools -- */
+
+/* Flex wrap, not grid - UXP has no CSS grid. */
+.tool-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tool {
+  display: flex;
+  min-width: 116px;
+  max-width: 100%;
+  flex: 1 1 116px;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  text-align: left;
+}
+
+.tool:hover {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface-hover);
+}
+
+.tool[disabled] {
+  border-color: var(--color-border);
+  color: var(--color-text-disabled);
+}
+
+/* Armed destructive tool: inverted, so a second click is clearly deliberate. */
+.tool[data-armed='true'] {
+  border-color: var(--color-active);
+  background-color: var(--color-active);
+  color: var(--color-text-inverse);
+}
+
+.tool__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.tool__hint {
+  max-width: 100%;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool[data-armed='true'] .tool__hint,
+.tool[disabled] .tool__hint {
+  color: inherit;
+}
+
+/* ------------------------------------------------------------- self-test -- */
+
+.selftest {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.selftest__summary {
+  padding: var(--space-2) 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.selftest__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.selftest__item {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2);
+  border-left: 2px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+/* Status is carried by the label text and the rule weight, never by hue. */
+.selftest__item[data-status='pass'] {
+  border-left-color: var(--color-border-strong);
+}
+
+.selftest__item[data-status='fail'] {
+  border-left-color: var(--color-active);
+  background-color: var(--color-surface-selected);
+}
+
+.selftest__item[data-status='warn'] {
+  border-left-color: var(--color-text-muted);
+}
+
+.selftest__status {
+  width: 38px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: 9px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+}
+
+.selftest__item[data-status='fail'] .selftest__status {
+  color: var(--color-text);
+}
+
+.selftest__label {
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.selftest__detail {
+  margin-top: 2px;
+  padding-left: 38px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+.selftest__export {
+  width: 100%;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
