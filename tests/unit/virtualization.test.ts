@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   GROUP_HEADER_HEIGHT,
+  GROUP_HEADER_MARGIN,
   buildOffsets,
   buildRows,
   computeColumns,
@@ -101,28 +102,53 @@ describe('buildRows', () => {
 
 describe('buildOffsets and findRowAtOffset', () => {
   it('accumulates mixed header and tile row heights', () => {
-    const rows = buildRows(
-      [makeAsset({ name: 'a.png' }), makeAsset({ name: 'b.svg' })],
-      3,
-      true,
-    );
+    const rows = buildRows([makeAsset({ name: 'a.png' }), makeAsset({ name: 'b.svg' })], 3, true);
     const offsets = buildOffsets(rows, METRICS.tileHeight, METRICS.gap);
 
     expect(offsets[0]).toBe(0);
     // Each entry advances by that row's own height.
     for (let i = 0; i < rows.length; i += 1) {
-      const expected =
-        (offsets[i] ?? 0) + rowHeight(rows[i]!, METRICS.tileHeight, METRICS.gap);
+      const expected = (offsets[i] ?? 0) + rowHeight(rows[i]!, METRICS.tileHeight, METRICS.gap);
       expect(offsets[i + 1]).toBe(expected);
     }
   });
 
+  /*
+   * Asserted against the LITERAL heights in components.css, not against the
+   * constants themselves. `GROUP_HEADER_HEIGHT + GROUP_HEADER_MARGIN` on the
+   * right-hand side is a tautology: it passed just as happily when the header
+   * was 23 against a stylesheet that says 22, which is the drift these tests
+   * exist to catch.
+   *
+   * If components.css changes `.asset-group__header`, these numbers change with
+   * it - by hand, deliberately, and visibly in the diff.
+   *
+   *   .asset-group__header { height: 22px; margin-bottom: 8px }
+   *   + `* { box-sizing: border-box }` in global.css, so the 1px border-bottom
+   *     is INSIDE the 22 and must not be added again.
+   */
   it('gives headers and tile rows different heights', () => {
     const header = { kind: 'header' as const, label: 'x', count: 1 };
     const items = { kind: 'items' as const, items: [] };
 
-    expect(rowHeight(header, 130, 8)).toBe(GROUP_HEADER_HEIGHT + 8);
+    expect(rowHeight(header, 130, 8)).toBe(30);
     expect(rowHeight(items, 130, 8)).toBe(138);
+  });
+
+  it('matches the heights declared in components.css', () => {
+    expect(GROUP_HEADER_HEIGHT).toBe(22);
+    expect(GROUP_HEADER_MARGIN).toBe(8);
+  });
+
+  /*
+   * A heading keeps its own margin whatever the tile gap is. It used to borrow
+   * the gap, so in list mode - where the gap is 0 - every group was measured
+   * short and the window drifted from the rendered rows.
+   */
+  it('does not shrink a header when the tile gap is zero', () => {
+    const header = { kind: 'header' as const, label: 'x', count: 1 };
+
+    expect(rowHeight(header, 25, 0)).toBe(30);
   });
 
   it('finds the row containing an offset', () => {
@@ -215,10 +241,7 @@ describe('computeRowWindow', () => {
 
 describe('findAssetPosition', () => {
   it('locates an asset by row and column, skipping headers', () => {
-    const mixed = [
-      makeAsset({ name: 'a.png' }),
-      makeAsset({ name: 'b.svg', id: 'target' }),
-    ];
+    const mixed = [makeAsset({ name: 'a.png' }), makeAsset({ name: 'b.svg', id: 'target' })];
     const rows = buildRows(mixed, 3, true);
     const position = findAssetPosition(rows, 'target');
 

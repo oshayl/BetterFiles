@@ -15,14 +15,27 @@ import { useThumbnail } from '../hooks';
 import { CaretDownIcon, CaretUpIcon, FileIcon, WarningIcon } from '../icons';
 import { TYPE_LABELS, formatFileSize, formatModifiedDate } from '../../utils/file-types';
 
-/** Larger than any grid tile, per section 19.2. */
-const PREVIEW_SIZE = 768;
+/**
+ * Larger than any grid tile, per section 19.2.
+ *
+ * Exported because Regenerate has to invalidate the entry this panel actually
+ * requested. App used to pass `settings.thumbnailSize` instead, which deleted a
+ * different cache key and left the failed preview exactly where it was.
+ */
+export const PREVIEW_SIZE = 768;
 
 interface PreviewPanelProps {
   readonly asset: AssetRecord | null;
   /** Height of the expanded stage; ignored when collapsed. */
   readonly height: number;
+  /** The user's stored preference. */
   readonly expanded: boolean;
+  /**
+   * Whether the panel is tall enough to grant a stage at all. Kept separate
+   * from `expanded` so a panel too short to expand can say so, rather than
+   * showing a toggle that flips the setting and changes nothing on screen.
+   */
+  readonly canExpand: boolean;
   readonly background: ThumbnailBackground;
   readonly onToggle: () => void;
   readonly onRegenerate: (assetId: string) => void;
@@ -32,10 +45,14 @@ export function PreviewPanel({
   asset,
   height,
   expanded,
+  canExpand,
   background,
   onToggle,
   onRegenerate,
 }: PreviewPanelProps): ReactElement {
+  const showBody = expanded && canExpand;
+  const blocked = expanded && !canExpand;
+
   return (
     <div className="preview no-shrink col">
       {/* The strip is always present, so the toggle never moves. */}
@@ -48,16 +65,31 @@ export function PreviewPanel({
         className="preview__strip"
         measure="previewStrip"
         onClick={onToggle}
-        title={expanded ? 'Collapse preview' : 'Expand preview'}
+        title={
+          blocked
+            ? 'The panel is too short to show a preview - make it taller, or hide the sidebar'
+            : expanded
+              ? 'Collapse preview'
+              : 'Expand preview'
+        }
       >
-        {expanded ? <CaretDownIcon size={12} /> : <CaretUpIcon size={12} />}
+        {showBody ? <CaretDownIcon size={12} /> : <CaretUpIcon size={12} />}
         <span className="preview__strip-name truncate">
           {asset ? asset.name : 'No asset selected'}
         </span>
-        {asset && <span className="preview__strip-meta">{formatFileSize(asset.sizeBytes)}</span>}
+        {/*
+          Says why nothing happened. The caret used to keep pointing up and the
+          setting flipped silently, so on a short panel the preview looked
+          permanently broken.
+        */}
+        {blocked ? (
+          <span className="preview__strip-meta">Panel too short</span>
+        ) : (
+          asset && <span className="preview__strip-meta">{formatFileSize(asset.sizeBytes)}</span>
+        )}
       </Pressable>
 
-      {expanded && asset && (
+      {showBody && asset && (
         <PreviewBody
           asset={asset}
           height={height}
@@ -100,9 +132,9 @@ function PreviewBody({
                 <WarningIcon size={12} /> {source.reason}
               </span>
             )}
-            <button className="button preview__retry" onClick={() => onRegenerate(asset.id)}>
+            <Pressable className="button preview__retry" onClick={() => onRegenerate(asset.id)}>
               Regenerate
-            </button>
+            </Pressable>
           </div>
         )}
       </div>

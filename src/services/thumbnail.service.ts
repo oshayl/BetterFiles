@@ -239,12 +239,19 @@ export class ThumbnailService {
     }
   }
 
-  /** Clears the failure record so the user's retry actually retries. */
+  /**
+   * Clears the failure record so the user's retry actually retries.
+   *
+   * `allowGeneration` is the point of the whole call: without it the replayed
+   * request took the same path as a grid thumbnail, short-circuited to a
+   * placeholder and emitted nothing, so Regenerate produced no visible change
+   * however many times it was clicked.
+   */
   async regenerate(asset: AssetRecord, size: number): Promise<PreviewSource> {
     this.#failed.delete(asset.id);
     this.#resolved.delete(asset.id);
     await this.cache.delete(asset.id, size);
-    return this.request({ asset, size, visible: true });
+    return this.request({ asset, size, visible: true, allowGeneration: true });
   }
 
   /** Drops memoised state, e.g. after clearing the cache. */

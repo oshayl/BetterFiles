@@ -10,6 +10,7 @@ import {
   formatSelfTestResults,
   runSelfTest,
 } from '../../services/self-test.service';
+import { Pressable } from '../controls/Pressable';
 
 export function SelfTestPanel(): ReactElement {
   const [results, setResults] = useState<CheckResult[] | null>(null);
@@ -34,9 +35,9 @@ export function SelfTestPanel(): ReactElement {
         first for the fullest coverage. All checks are read-only.
       </p>
 
-      <button className="button" disabled={running} onClick={() => void run()}>
+      <Pressable className="button" disabled={running} onClick={() => void run()}>
         {running ? 'Running...' : 'Run Self-Test'}
-      </button>
+      </Pressable>
 
       {results && (
         <>

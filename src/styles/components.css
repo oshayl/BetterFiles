@@ -87,9 +87,14 @@
   font-weight: var(--font-weight-bold);
 }
 
+/*
+ * `--muted-white` was never defined, so this fell through to a hardcoded
+ * #d8d8d8: correct against the dark theme's white button, but white-on-#d8d8d8
+ * - effectively invisible - against the light theme's black one.
+ */
 .button--primary:hover {
-  background-color: var(--muted-white, #d8d8d8);
-  border-color: #d8d8d8;
+  background-color: var(--color-active-hover);
+  border-color: var(--color-active-hover);
 }
 
 .button--primary[disabled],
@@ -103,6 +108,16 @@
 .button--icon {
   width: var(--height-control);
   padding: 0;
+}
+
+/*
+ * Word-labelled control on a dense row. `.button--icon`'s square width would
+ * clip the label, and `.button`'s default padding is too generous for a 24px
+ * toolbar that also carries two dropdowns.
+ */
+.button--text {
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-xs);
 }
 
 .button--ghost {
@@ -121,6 +136,45 @@
   border-color: var(--color-border-strong);
   background-color: var(--color-surface-selected);
   color: var(--color-text);
+}
+
+/*
+ * "More actions" affordance. Three drawn dots rather than a literal "...",
+ * which sat on the text baseline and read as truncated text hugging the bottom
+ * of the control.
+ *
+ * The dots take an explicit token colour per theme scope, NOT `currentColor`.
+ * UXP implements a CSS subset and nothing else in this codebase relies on
+ * `currentColor` resolving - src/components/icons.tsx notes that the PNG icons
+ * are themed by the `.theme-light` / `.theme-dark` scope for exactly this
+ * reason. If it did not resolve here the dots would paint transparent and the
+ * control would render empty, and unlike the old "..." text there is no
+ * fallback to see.
+ */
+.more-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.more-glyph__dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 1px;
+  background-color: var(--color-text-secondary);
+}
+
+/* Track the parent control's own hover/active states explicitly. */
+.button:hover .more-glyph__dot,
+.button[data-active='true'] .more-glyph__dot,
+.tree-row__menu:hover .more-glyph__dot,
+.tree-row__menu[data-active='true'] .more-glyph__dot {
+  background-color: var(--color-text);
+}
+
+.button[data-disabled='true'] .more-glyph__dot {
+  background-color: var(--color-text-muted);
 }
 
 /* ------------------------------------------------------------ boot state -- */
@@ -215,11 +269,19 @@
   gap: 2px;
 }
 
-/* Text glyph used where a drawn icon would be overkill. */
-.toolbar__glyph {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0.04em;
+/*
+ * Swatch of the current thumbnail backdrop, shown on the control that cycles
+ * it. Borrows the `.thumb-bg-*` classes so it always matches what the grid
+ * actually draws; only the tile size is overridden, because the 12px
+ * checkerboard tile would fill a 12px swatch with one flat square.
+ */
+.toolbar__swatch {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  background-size: 6px 6px;
 }
 
 .toolbar__count {
@@ -228,8 +290,17 @@
 }
 
 /* Filter chips - the one place a pill shape is allowed (section 8.5). */
+/*
+ * `display: flex` and the centring are load-bearing, not decoration. A native
+ * button centred its own label; a div does not, so a chip converted to
+ * `Pressable` without this renders its text jammed against the top edge of an
+ * 18px pill.
+ */
 .chip {
+  display: flex;
   height: 18px;
+  align-items: center;
+  justify-content: center;
   padding: 0 var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: 9px;
@@ -280,9 +351,21 @@
   flex: 1 1 auto;
 }
 
-.slider {
-  width: 70px;
-  margin: 0 var(--space-2);
+/*
+ * Numeric setting adjusted by two Pressables. Replaces an `input[type=range]`,
+ * which UXP is not known to support - see StepperField in SettingsDialog.tsx.
+ */
+.stepper {
+  align-items: center;
+  margin-top: var(--space-1);
+}
+
+.stepper__value {
+  min-width: 44px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 /* --------------------------------------------------------------- sidebar -- */
@@ -446,6 +529,24 @@
   font-weight: var(--font-weight-medium);
 }
 
+/*
+ * The selectable span of the row, sibling to the twisty and the actions menu
+ * rather than their parent - nesting them produced a role="button" inside a
+ * role="button" and three tab stops per library. It takes all the width the
+ * two fixed-size controls leave, so clicking anywhere along the row still
+ * selects, exactly as when the whole row was one control.
+ */
+.tree-row__select {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  color: inherit;
+  font-weight: inherit;
+}
+
 .tree-row__twisty {
   display: flex;
   width: 14px;
@@ -479,15 +580,21 @@
 }
 
 .tree-row__menu {
+  display: flex;
   width: 16px;
+  height: 16px;
   flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
   border: none;
+  border-radius: var(--radius-xs);
   background-color: transparent;
   color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
 }
 
-.tree-row__menu:hover {
+.tree-row__menu:hover,
+.tree-row__menu[data-active='true'] {
+  background-color: var(--color-surface-hover);
   color: var(--color-text);
 }
 
@@ -516,8 +623,12 @@
   background-color: var(--color-surface-raised);
 }
 
-.tree-menu button,
-.action-menu button {
+/*
+ * Class selectors, not `button`: menu rows are Pressable divs now, because a
+ * native UXP button ignored `text-align: left` and centred every label.
+ */
+.tree-menu__item,
+.action-menu__item {
   padding: 5px var(--space-2);
   border: none;
   background-color: transparent;
@@ -527,18 +638,33 @@
   text-align: left;
 }
 
-.tree-menu button:hover,
-.action-menu button:hover {
+.tree-menu__item:hover,
+.action-menu__item:hover {
   background-color: var(--color-surface-hover);
   color: var(--color-text);
 }
 
+/* Destructive entry, set apart so Remove is not a neighbour of Refresh. */
+.tree-menu__item--danger {
+  border-top: 1px solid var(--color-border);
+  color: var(--color-danger);
+}
+
 /* ------------------------------------------------------------ asset grid -- */
 
-/* Height comes from layout.ts; see the note on .workspace. */
+/*
+ * Height comes from layout.ts; see the note on .workspace.
+ *
+ * Padding is HORIZONTAL ONLY, and must stay that way. AssetGrid's offset table
+ * starts at 0 and its total height is the sum of the rows, so a padding-top on
+ * this element would render every row that many pixels lower than the
+ * arithmetic believes: `findRowAtOffset` would resolve the wrong row under the
+ * cursor and `maxScroll` would clamp short of the real bottom. Vertical
+ * rhythm comes from `.asset-grid__row`'s margin-bottom instead.
+ */
 .asset-grid {
   flex: 0 0 auto;
-  padding: var(--space-2);
+  padding: 0 var(--space-2);
 }
 
 .asset-grid__row {
@@ -685,9 +811,14 @@
 /* ---------------------------------------------------------- type groups -- */
 
 /*
- * Section heading in grouped mode. Height must stay in sync with
- * GROUP_HEADER_HEIGHT in utils/virtualization.ts, or the virtual window and the
- * rendered rows disagree and the grid drifts while scrolling.
+ * Section heading in grouped mode. Height and margin must stay in sync with
+ * GROUP_HEADER_HEIGHT and GROUP_HEADER_MARGIN in utils/virtualization.ts, or
+ * the virtual window and the rendered rows disagree and the grid drifts while
+ * scrolling.
+ *
+ * The border does NOT count on top: `global.css` sets border-box globally, so
+ * the 22px declared below is the whole rendered box, border included, and
+ * GROUP_HEADER_HEIGHT is 22 to match.
  */
 .asset-group__header {
   display: flex;
@@ -972,7 +1103,9 @@
 }
 
 .notification__close {
+  display: flex;
   flex-shrink: 0;
+  align-items: center;
   border: none;
   background-color: transparent;
   color: var(--color-text-muted);
@@ -1056,8 +1189,12 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+/* Centring is explicit here for the same reason as `.chip`. */
 .tab {
+  display: flex;
   height: 24px;
+  align-items: center;
+  justify-content: center;
   padding: 0 var(--space-3);
   border: none;
   border-bottom: 2px solid transparent;
@@ -1075,9 +1212,18 @@
   color: var(--color-text);
 }
 
+/*
+ * `flex: 0 0 auto`, like .workspace and .asset-grid, and for the same reason:
+ * SettingsDialog, ToolsPanel and CategoryPicker each hand this element an
+ * explicit inline pixel height from `dialogBodyHeight()` in utils/layout.ts,
+ * and `flex: 1 1 auto` lets the flex algorithm stretch or shrink it away from
+ * that height again. In UXP the result is a body that grows to fit its content
+ * and can never scroll - which is how the Settings dialog's Cache and Data
+ * section and the category picker's confirm button became unreachable.
+ */
 .dialog__body {
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   padding: var(--space-3);
 }
 
@@ -1226,13 +1372,24 @@
   background-color: var(--color-surface-hover);
 }
 
-.tool[disabled] {
+.tool[disabled],
+.tool[data-disabled='true'] {
   border-color: var(--color-border);
   color: var(--color-text-disabled);
 }
 
-/* Armed destructive tool: inverted, so a second click is clearly deliberate. */
-.tool[data-armed='true'] {
+.tool[data-disabled='true']:hover {
+  border-color: var(--color-border);
+  background-color: var(--color-surface);
+}
+
+/*
+ * Armed destructive tool: inverted, so a second click is clearly deliberate.
+ * Keyed off `data-active` because the tile is a `Pressable`, which is what
+ * carries the state now - as a native button the styling was dropped entirely
+ * and the confirm step was invisible.
+ */
+.tool[data-active='true'] {
   border-color: var(--color-active);
   background-color: var(--color-active);
   color: var(--color-text-inverse);
@@ -1253,8 +1410,9 @@
   white-space: nowrap;
 }
 
-.tool[data-armed='true'] .tool__hint,
-.tool[disabled] .tool__hint {
+.tool[data-active='true'] .tool__hint,
+.tool[disabled] .tool__hint,
+.tool[data-disabled='true'] .tool__hint {
   color: inherit;
 }
 

@@ -75,11 +75,19 @@ export interface Layout {
   /** Height of the scrollable folder tree. */
   readonly sidebarTreeHeight: number;
   /**
-   * Height granted to the expanded preview stage. Zero means there was not
-   * enough room to expand at all, and the caller must render the strip only -
+   * Height granted to the expanded preview stage right now. Zero when the
+   * preview is collapsed OR when there was not enough room to expand at all -
    * the preview yields to the grid, never the other way round.
    */
   readonly previewBodyHeight: number;
+  /**
+   * Height the stage would be granted if it were expanded, independent of
+   * whether it currently is. Zero means the panel is too short to expand into
+   * at all, which is a different statement from "not expanded" and is what
+   * lets the strip say "Panel too short" instead of offering a toggle that
+   * changes nothing.
+   */
+  readonly previewGrantable: number;
 }
 
 /**
@@ -119,10 +127,19 @@ export function computeLayout(input: LayoutInput): Layout {
    */
   const reservedForGrid = chrome.toolbar + MIN_SCROLL_HEIGHT;
   const spare = Math.max(0, available - reservedForGrid);
-  const requested =
-    input.showPreview && input.previewExpanded ? Math.max(0, input.previewHeight) : 0;
-  const granted = Math.min(requested, spare);
-  const previewBodyHeight = granted >= MIN_PREVIEW_BODY ? granted : 0;
+
+  /*
+   * What the stage WOULD get if the user asked for it, computed independently
+   * of whether they currently have. `previewCanExpand` in App.tsx is derived
+   * from this: folding `previewExpanded` in here made the grant zero whenever
+   * the preference was off, so "can this panel expand at all?" and "is it
+   * expanded?" collapsed into one bit and a panel genuinely too short still
+   * advertised "Expand preview" until the user toggled it once.
+   */
+  const grantable = input.showPreview ? Math.min(Math.max(0, input.previewHeight), spare) : 0;
+  const previewGrantable = grantable >= MIN_PREVIEW_BODY ? grantable : 0;
+
+  const previewBodyHeight = input.previewExpanded ? previewGrantable : 0;
 
   /*
    * No clamping to a minimum here. Every height must come out of `available`,
@@ -136,7 +153,27 @@ export function computeLayout(input: LayoutInput): Layout {
     gridHeight: Math.max(0, workspaceHeight - chrome.toolbar),
     sidebarTreeHeight: Math.max(0, workspaceHeight - chrome.sidebarChrome),
     previewBodyHeight,
+    previewGrantable,
   };
+}
+
+/**
+ * Height for a dialog's scrollable body.
+ *
+ * Dialogs cover the whole panel, so the rule that governs the main column
+ * governs them too: `flex: 1 1 auto` does not bound a child in UXP, so an
+ * unbounded body grows to fit its content, never scrolls, and is clipped by
+ * `.app { overflow: hidden }` along with anything below it. That is how the
+ * Settings dialog's Cache and Data section and the category picker's confirm
+ * button became unreachable on a short panel.
+ *
+ * `chromeHeight` is the dialog's own fixed rows - header, tabs, notes, footer.
+ * An estimate is fine: it only bounds the scroll region, and erring high costs
+ * a few pixels of visible list rather than an unreachable control.
+ */
+export function dialogBodyHeight(panelHeight: number, chromeHeight: number): number {
+  const height = panelHeight > 0 ? panelHeight : ASSUMED_HEIGHT;
+  return Math.max(MIN_SCROLL_HEIGHT, height - chromeHeight);
 }
 
 /**

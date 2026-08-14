@@ -16,13 +16,21 @@ import {
   runQuickTool,
 } from '../../services/quick-tools.service';
 import { CloseIcon } from '../icons';
+import { Pressable } from '../controls/Pressable';
+import { dialogBodyHeight } from '../../utils/layout';
 
 interface ToolsPanelProps {
   readonly hasDocument: boolean;
+  /** Measured panel height; the body needs an explicit one to scroll in UXP. */
+  readonly panelHeight: number;
   readonly onClose: () => void;
 }
 
-export function ToolsPanel({ hasDocument, onClose }: ToolsPanelProps): ReactElement {
+/** Header, plus the result notification when one is showing. */
+const DIALOG_CHROME = 28;
+const NOTIFICATION_HEIGHT = 28;
+
+export function ToolsPanel({ hasDocument, panelHeight, onClose }: ToolsPanelProps): ReactElement {
   const [armed, setArmed] = useState<string | null>(null);
   const [running, setRunning] = useState<string | null>(null);
   const [result, setResult] = useState<ToolResult | null>(null);
@@ -54,12 +62,22 @@ export function ToolsPanel({ hasDocument, onClose }: ToolsPanelProps): ReactElem
       <div className="dialog__header row">
         <span className="dialog__title">Quick Tools</span>
         <span className="spacer" />
-        <button className="button button--ghost button--icon" title="Close" onClick={onClose}>
+        <Pressable className="button button--ghost button--icon" title="Close" onClick={onClose}>
           <CloseIcon size={12} />
-        </button>
+        </Pressable>
       </div>
 
-      <div className="dialog__body scroll-y">
+      {/* Explicit height: UXP does not bound a flex child, so a full tool list
+          would grow past the panel and be clipped. See utils/layout.ts. */}
+      <div
+        className="dialog__body scroll-y"
+        style={{
+          height: `${dialogBodyHeight(
+            panelHeight,
+            DIALOG_CHROME + (result ? NOTIFICATION_HEIGHT : 0),
+          )}px`,
+        }}
+      >
         {!hasDocument && (
           <p className="dialog__note">
             No document is open. Tools that act on a document are disabled.
@@ -75,20 +93,28 @@ export function ToolsPanel({ hasDocument, onClose }: ToolsPanelProps): ReactElem
                 const disabled = (tool.needsDocument && !hasDocument) || running === tool.id;
                 const isArmed = armed === tool.id;
 
+                /*
+                  A Pressable, not a button. UXP flattened the label and hint
+                  into one run-together string ("Purge All CachesDiscards undo
+                  history irreversibly") and ignored `.tool`'s column layout;
+                  it also dropped `[data-armed]`, so the two-click confirm on a
+                  destructive tool gave no sign it had armed.
+                */
                 return (
-                  <button
+                  <Pressable
                     key={tool.id}
                     className="tool"
-                    data-armed={isArmed ? 'true' : 'false'}
+                    active={isArmed}
                     disabled={disabled}
                     title={tool.description}
+                    label={tool.label}
                     onClick={() => void activate(tool)}
                   >
                     <span className="tool__label">
                       {running === tool.id ? 'Working...' : isArmed ? 'Confirm?' : tool.label}
                     </span>
                     <span className="tool__hint truncate">{tool.description}</span>
-                  </button>
+                  </Pressable>
                 );
               })}
             </div>
@@ -99,9 +125,9 @@ export function ToolsPanel({ hasDocument, onClose }: ToolsPanelProps): ReactElem
       {result && (
         <div className="notification" data-kind={result.ok ? 'info' : 'error'}>
           <span className="notification__text">{result.message}</span>
-          <button className="notification__close" onClick={() => setResult(null)}>
+          <Pressable className="notification__close" onClick={() => setResult(null)}>
             Dismiss
-          </button>
+          </Pressable>
         </div>
       )}
     </div>

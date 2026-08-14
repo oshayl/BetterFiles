@@ -16,7 +16,7 @@ import { useStore, selectSelectedAsset, selectVisible } from './store';
 import { getServices } from './services';
 import { PanelHeader } from '../components/layout/PanelHeader';
 import { FolderSidebar } from '../components/layout/FolderSidebar';
-import { PreviewPanel } from '../components/layout/PreviewPanel';
+import { PREVIEW_SIZE, PreviewPanel } from '../components/layout/PreviewPanel';
 import { ActionBar } from '../components/layout/ActionBar';
 import { SearchBar } from '../components/controls/SearchBar';
 import { Toolbar } from '../components/controls/Toolbar';
@@ -32,12 +32,15 @@ import {
 } from '../components/feedback/States';
 import { CategoryPicker } from '../components/controls/CategoryPicker';
 import { BulkImportDialog } from '../components/controls/BulkImportDialog';
+import { TextPromptDialog } from '../components/controls/TextPromptDialog';
+import { Pressable } from '../components/controls/Pressable';
 import { useElementSize, useKeyboardShortcuts, useMeasuredChrome } from '../components/hooks';
 import { moveSelection } from '../utils/virtualization';
 import { computeLayout } from '../utils/layout';
 import { writeLayoutProbe } from '../services/layout-probe.service';
 import { availableCategories } from '../models/folder';
 import type { PlacementMode } from '../models/import-options';
+import type { ViewMode } from '../models/settings';
 
 /**
  * Width below which the sidebar is forced closed, and below which the preview
@@ -138,9 +141,16 @@ export function App(): ReactElement {
     chrome,
   });
 
-  // Zero means the panel is too short to expand into: layout.ts grants the
-  // stage only what is left after the grid has been served.
-  const previewExpanded = layout.previewBodyHeight > 0;
+  /*
+   * Zero means the panel is too short to expand into: layout.ts grants the
+   * stage only what is left after the grid has been served.
+   *
+   * Read from `previewGrantable`, NOT `previewBodyHeight`. The latter is zero
+   * whenever the preview is merely collapsed, which made this identical to
+   * `expanded` and left a genuinely too-short panel advertising "Expand
+   * preview" until the user toggled it once and got "Panel too short".
+   */
+  const previewCanExpand = layout.previewGrantable > 0;
 
   /*
    * TEMPORARY: records what the rows actually measure, so the layout can be
@@ -170,6 +180,22 @@ export function App(): ReactElement {
     ? (state.folders.find((folder) => folder.id === recategorising) ?? null)
     : null;
 
+  /*
+   * The grid mode to restore when leaving list view. The toggle used to send a
+   * hardcoded 'compactGrid', so a user whose settings held 'largeGrid' lost it
+   * the first time they switched to list and back.
+   */
+  const [lastGridMode, setLastGridMode] = useState<ViewMode>('compactGrid');
+  useEffect(() => {
+    if (state.settings.viewMode !== 'list') setLastGridMode(state.settings.viewMode);
+  }, [state.settings.viewMode]);
+
+  /** Library being renamed, if any. */
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const renamingFolder = renaming
+    ? (state.folders.find((folder) => folder.id === renaming) ?? null)
+    : null;
+
   const selectedIndex = selectedAsset
     ? visible.findIndex((asset) => asset.id === selectedAsset.id)
     : -1;
@@ -193,12 +219,71 @@ export function App(): ReactElement {
     });
   }, [isNarrow, state]);
 
+  /*
+   * Any modal surface that covers the grid. While one is up the panel
+   * shortcuts must not run: this listener is bound to `document`, so it sees
+   * keys pressed inside the dialog too, and Enter on a dialog's own Cancel
+   * button was inserting the selected asset into the open document behind it.
+   */
+  /*
+   * Keyed off the RESOLVED folders, not the pending ids. The dialogs below
+   * render only when `state.folders.find(...)` succeeds, so an id left behind
+   * by a folder list that was rebuilt without it (initialize, importLibraries)
+   * would paint no dialog while still reporting one open - silently swallowing
+   * Enter, the arrow keys, f, Cmd+K and Cmd+R with nothing on screen to
+   * explain it, and only Escape to recover.
+   */
+  const dialogOpen =
+    settingsOpen ||
+    toolsOpen ||
+    state.pendingImport != null ||
+    state.importPlan != null ||
+    recategorisingFolder != null ||
+    renamingFolder != null;
+
+  /** Closes the top-most surface, so Escape peels one layer at a time. */
+  const closeTopDialog = useCallback(() => {
+    if (toolsOpen) setToolsOpen(false);
+    else if (settingsOpen) setSettingsOpen(false);
+    else if (renamingFolder) setRenaming(null);
+    /*
+     * The bulk import plan absorbs Escape without acting on it. Cancelling it
+     * discards the whole folder scan - the plan and the module-level
+     * scannedEntries map - which for a pack collection is a long walk that has
+     * to be redone from the picker. That is too much to lose to a single
+     * keystroke pressed to dismiss a text field, so it needs the explicit
+     * Cancel control.
+     *
+     * This branch must stay: without it Escape falls through to whatever is
+     * below and cancels the pending single-folder import behind the dialog.
+     */
+    else if (state.importPlan) return;
+    else if (recategorisingFolder) setRecategorising(null);
+    else if (state.pendingImport) state.cancelImport();
+  }, [toolsOpen, settingsOpen, renamingFolder, recategorisingFolder, state]);
+
   // ------------------------------------------------------- keyboard (11.2) --
   useKeyboardShortcuts(
     useCallback(
       (event: KeyboardEvent) => {
-        const target = event.target as HTMLElement | null;
-        const inTextField = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
+        const tag = (event.target as HTMLElement | null)?.tagName;
+        /*
+         * `SELECT` belongs here with the text fields: Enter on the sort
+         * dropdown used to insert the selected asset, and the arrow keys moved
+         * both the dropdown value and the grid selection at once.
+         */
+        const inControl = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+        // Before the text-field guard: Escape must close a dialog from inside
+        // the dialog's own inputs, which is usually where focus is.
+        if (event.key === 'Escape' && dialogOpen) {
+          event.preventDefault();
+          closeTopDialog();
+          return;
+        }
+
+        // Nothing below belongs to a covered panel.
+        if (dialogOpen) return;
 
         if ((event.metaKey || event.ctrlKey) && (event.key === 'k' || event.key === 'f')) {
           event.preventDefault();
@@ -213,7 +298,7 @@ export function App(): ReactElement {
         }
 
         // Everything below is grid navigation, which must not hijack typing.
-        if (inTextField) return;
+        if (inControl) return;
 
         if (event.key === 'Enter') {
           event.preventDefault();
@@ -222,9 +307,7 @@ export function App(): ReactElement {
         }
 
         if (event.key === 'Escape') {
-          if (toolsOpen) setToolsOpen(false);
-          else if (settingsOpen) setSettingsOpen(false);
-          else if (state.query !== '') state.setQuery('');
+          if (state.query !== '') state.setQuery('');
           else state.selectAsset(null);
           return;
         }
@@ -251,7 +334,7 @@ export function App(): ReactElement {
           if (asset) state.selectAsset(asset.id);
         }
       },
-      [state, visible, selectedIndex, columns, selectedAsset, insert, toolsOpen, settingsOpen],
+      [state, visible, selectedIndex, columns, selectedAsset, insert, dialogOpen, closeTopDialog],
     ),
   );
 
@@ -328,6 +411,7 @@ export function App(): ReactElement {
             onToggleFavorite={(id) => void state.toggleFolderFavorite(id)}
             onRevealFolder={(id) => void state.revealFolder(id)}
             onToggleSubfolders={(id, include) => void state.setIncludeSubfolders(id, include)}
+            onRenameFolder={(id) => setRenaming(id)}
           />
         )}
 
@@ -336,6 +420,7 @@ export function App(): ReactElement {
             typeFilter={state.settings.typeFilter}
             sortMode={state.settings.sortMode}
             viewMode={state.settings.viewMode}
+            gridMode={lastGridMode}
             thumbnailBackground={state.settings.thumbnailBackground}
             groupByType={state.settings.groupByType}
             compact={isVeryNarrow}
@@ -376,14 +461,15 @@ export function App(): ReactElement {
         <PreviewPanel
           asset={selectedAsset}
           height={layout.previewBodyHeight}
-          expanded={previewExpanded}
+          expanded={state.settings.previewExpanded}
+          canExpand={previewCanExpand}
           onToggle={state.togglePreviewExpanded}
           background={state.settings.thumbnailBackground}
           onRegenerate={(assetId) => {
             const asset = state.assets.find((entry) => entry.id === assetId);
-            if (asset) {
-              void getServices().thumbnails.regenerate(asset, state.settings.thumbnailSize);
-            }
+            // PREVIEW_SIZE, not the grid's thumbnail size: the preview asked
+            // for that entry, so that is the one Regenerate has to invalidate.
+            if (asset) void getServices().thumbnails.regenerate(asset, PREVIEW_SIZE);
           }}
         />
       )}
@@ -405,9 +491,9 @@ export function App(): ReactElement {
           data-kind={state.notification.kind}
         >
           <span className="notification__text">{state.notification.message}</span>
-          <button className="notification__close" onClick={state.dismissNotification}>
+          <Pressable className="notification__close" onClick={state.dismissNotification}>
             Dismiss
-          </button>
+          </Pressable>
         </div>
       )}
 
@@ -416,6 +502,7 @@ export function App(): ReactElement {
           title="Add Library"
           folderName={state.pendingImport.name}
           categories={availableCategories(state.folders)}
+          panelHeight={height}
           onConfirm={(category) => void state.confirmImport(category)}
           onCancel={state.cancelImport}
         />
@@ -427,11 +514,26 @@ export function App(): ReactElement {
           folderName={recategorisingFolder.displayName}
           categories={availableCategories(state.folders)}
           current={recategorisingFolder.category}
+          panelHeight={height}
           onConfirm={(category) => {
             void state.setFolderCategory(recategorisingFolder.id, category);
             setRecategorising(null);
           }}
           onCancel={() => setRecategorising(null)}
+        />
+      )}
+
+      {renamingFolder && (
+        <TextPromptDialog
+          title="Rename Library"
+          label="Library name, as it appears in the sidebar"
+          initialValue={renamingFolder.displayName}
+          confirmLabel="Rename"
+          onConfirm={(name) => {
+            void state.renameFolder(renamingFolder.id, name);
+            setRenaming(null);
+          }}
+          onCancel={() => setRenaming(null)}
         />
       )}
 
@@ -442,6 +544,7 @@ export function App(): ReactElement {
           panelHeight={height}
           busy={state.scanning}
           onToggleRow={(rowId, selected) => state.updateImportPlan(rowId, { selected })}
+          onRenameRow={(rowId, displayName) => state.updateImportPlan(rowId, { displayName })}
           onChangeCategory={(rowId, category) => state.updateImportPlan(rowId, { category })}
           onSetAll={state.setAllImportRows}
           onConfirm={() => void state.confirmBulkImport()}
@@ -450,10 +553,16 @@ export function App(): ReactElement {
       )}
 
       {toolsOpen && (
-        <ToolsPanel hasDocument={state.hasActiveDocument} onClose={() => setToolsOpen(false)} />
+        <ToolsPanel
+          hasDocument={state.hasActiveDocument}
+          panelHeight={height}
+          onClose={() => setToolsOpen(false)}
+        />
       )}
 
-      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsDialog panelHeight={height} onClose={() => setSettingsOpen(false)} />
+      )}
     </div>
   );
 }

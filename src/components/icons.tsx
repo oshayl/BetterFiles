@@ -79,3 +79,21 @@ export const StarIcon = ({ filled = false, ...p }: Sized & { filled?: boolean })
 export const ThemeIcon = ({ dark = false, ...p }: Sized & { dark?: boolean }) => (
   <Icon name={dark ? 'moon' : 'sun'} {...p} />
 );
+
+/**
+ * The "more actions" affordance.
+ *
+ * Drawn as three spans rather than a literal "..." string: three full stops sit
+ * on the text baseline, so they hugged the bottom edge of the control and read
+ * as truncated text rather than a menu. These are centred and evenly spaced,
+ * and they take their colour from the parent like the PNG icons do.
+ */
+export function MoreGlyph(): ReactElement {
+  return (
+    <span className="more-glyph">
+      <span className="more-glyph__dot" />
+      <span className="more-glyph__dot" />
+      <span className="more-glyph__dot" />
+    </span>
+  );
+}

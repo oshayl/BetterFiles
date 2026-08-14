@@ -20,7 +20,7 @@ Verified against Adobe's UXP documentation for Photoshop 25+ (UXP 8/9).
 | **`@font-face`** | Inter cannot be shipped. The font stack degrades to installed system fonts. |
 | **HTML5 Canvas** | No client-side image resizing or re-encoding. Thumbnails come from the Photoshop Imaging API. |
 | **`getElementsByClassName`** | Use `querySelectorAll`. |
-| **CSS on `<button>`** | UXP renders a NATIVE button: it flattens children into one text label and ignores `display: flex`, `height`, `gap` and `text-align`. Anything needing custom layout uses `Pressable` (a div) instead. Measured in Photoshop 2026: a strip styled `height: 20px` rendered at 30px as a `<button>` and at exactly 20px as a div. |
+| **CSS on `<button>`** | UXP renders a NATIVE button: it flattens children into one text label and ignores `display: flex`, `height`, `gap`, `text-align` and `data-*` styling. **Nothing in `src/` may use `<button>`** — `Pressable` (a div) is the only button primitive, and an ESLint `no-restricted-syntax` rule enforces it. Measured in Photoshop 2026: a strip styled `height: 20px` rendered at 30px as a `<button>` and at exactly 20px as a div. |
 | **iframes** | Not supported, and may never be. |
 | **Drag to canvas** | UXP 9.1 added drag/drop *between UXP panels and WebViews only*. Panel-to-canvas drag remains impossible, which is why insertion is double-click driven (roadmap §5.2). |
 
@@ -116,6 +116,43 @@ frame before measurement lands.
 Anything that adds a fixed row to the panel column must mark it `data-measure`
 and add a matching key to `ChromeHeights`, or the panel will overflow by that
 row's height.
+
+**Dialogs are subject to the same rule.** A dialog covers the whole panel, and
+`.dialog__body` was bounded only by `flex: 1 1 auto` — so it grew to fit its
+content, never scrolled, and was clipped along with everything below it. The
+Settings dialog's Cache and Data section and the category picker's confirm
+button were both unreachable this way. Every dialog now passes the measured
+panel height to `dialogBodyHeight()` in `utils/layout.ts`.
+
+**The virtualised grid is subject to it twice over.** `AssetGrid`'s `GAP`,
+`LIST_ROW_HEIGHT` and `CARD_BORDER`, and `GROUP_HEADER_HEIGHT` /
+`GROUP_HEADER_MARGIN` in `utils/virtualization.ts`, are a hand-maintained mirror
+of `components.css` — the same kind of mirror that drifted for the panel chrome.
+They must be *rendered* heights, and whether a border counts toward that depends
+on how the element is sized:
+
+- **Declared height** (`.asset-row`, `.asset-group__header`): `global.css` sets
+  `* { box-sizing: border-box }`, so the declared height already contains the
+  border. Copy it verbatim. Adding the border on top counts it twice.
+- **Content-sized** (`.asset-card`, which gets only a width): the border sits
+  outside the content and genuinely adds to the box, which is what `CARD_BORDER`
+  is for.
+
+Both directions have shipped as bugs. A 22px constant against a 24px declared
+row was 2px short per row; "fixing" it to 25 by adding the border made it 1px
+long. Either way the spacers hold open the wrong amount of space and the row
+under the cursor stops being the row that gets selected.
+
+This is a *different* rule from the `offsetHeight` / `clientHeight` note above.
+That one is about measuring a rendered element, where `clientHeight` excludes
+the border and under-counts. This one is about mirroring a stylesheet, where
+border-box means the declared number is already the whole box.
+
+**A scrollable container's own vertical padding must be zero**, or folded into
+the offset arithmetic. `.asset-grid` carries horizontal padding only: a
+`padding-top` shifts every row down by its value while the offset table still
+starts at 0, so hit-testing resolves the wrong row and `maxScroll` clamps short
+of the real bottom.
 
 ## Manifest gotchas (found by loading it in Photoshop 2026)
 

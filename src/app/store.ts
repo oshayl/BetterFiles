@@ -380,7 +380,10 @@ export const useStore = create<AssetBrowserState>((set, get) => ({
 
       added.push({
         id: row.id,
-        displayName: row.displayName,
+        // Defended like `category` below. The dialog blocks a blank name, but
+        // a library persisted with one renders as an empty sidebar row with
+        // no way to identify or re-target it, so never store the raw value.
+        displayName: row.displayName.trim() || fallbackLibraryName(row.nativePath),
         category: row.category.trim() || UNCATEGORISED,
         nativePath: row.nativePath,
         ...(persistentToken ? { persistentToken } : {}),
@@ -818,6 +821,18 @@ export const useStore = create<AssetBrowserState>((set, get) => ({
 
 type SetState = (partial: Partial<AssetBrowserState>) => void;
 type GetState = () => AssetBrowserState;
+
+/**
+ * Last resort name for a library imported with the name field left blank.
+ *
+ * The folder's own name is the same thing `suggestDisplayName` started from,
+ * so it is a name the user will recognise in the sidebar - which is the whole
+ * point of not persisting the empty string.
+ */
+function fallbackLibraryName(nativePath: string): string {
+  const name = nativePath.split('/').filter(Boolean).pop();
+  return name && name.trim() !== '' ? name : 'Untitled Library';
+}
 
 function updateSettings(set: SetState, get: GetState, patch: Partial<PluginSettings>): void {
   const settings = { ...get().settings, ...patch };

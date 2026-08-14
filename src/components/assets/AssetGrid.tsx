@@ -25,13 +25,53 @@ import {
   scrollOffsetForRow,
 } from '../../utils/virtualization';
 
-/** Space between tiles, and the grid's own padding. */
-const GAP = 6;
+/*
+ * THESE MIRROR components.css AND MUST BE KEPT IN STEP WITH IT.
+ *
+ * The virtual window is arithmetic over these numbers while the browser lays
+ * out from the stylesheet, so any disagreement compounds: the spacers hold open
+ * the wrong amount of space, and after a few screens the row under the cursor
+ * is no longer the row that gets selected.
+ *
+ * Every value is the RENDERED height, and how a border contributes to that
+ * depends on whether the element declares a height at all:
+ *
+ *   - Declared height (`.asset-row`, `.asset-group__header`): `global.css` sets
+ *     `* { box-sizing: border-box }`, so the declared height already contains
+ *     the border. Copy it verbatim; adding the border double-counts it.
+ *   - Content-sized (`.asset-card`): no declared height, so the border really
+ *     does add to what the element occupies. See CARD_BORDER.
+ */
+
+/**
+ * `--space-2`. Both `.asset-grid__row`'s gap and its margin-bottom. Was 6 while
+ * the CSS said 8, so both the column count and the row pitch were computed
+ * short.
+ *
+ * NOT `.asset-grid`'s own padding: that is horizontal only, deliberately. A
+ * vertical padding on the scroll container shifts every row down by its value
+ * while the offset table still starts at 0, which puts hit-testing and
+ * `scrollOffsetForRow` permanently out of step with the DOM.
+ */
+const GAP = 8;
+
+/**
+ * `.asset-card` border, 1px each side. Added because the card declares no
+ * height - it is sized by its thumbnail and caption, so the border sits
+ * outside that and adds to the rendered box.
+ */
+const CARD_BORDER = 2;
+
 /** Height of the caption under each thumbnail. See COMPACT_TILE_WIDTH. */
 const CARD_META_FULL = 30;
 const CARD_META_COMPACT = 18;
 
-const LIST_ROW_HEIGHT = 22;
+/**
+ * `.asset-row` declares `height: 24px`, which under border-box already
+ * includes its 1px `border-bottom`. Was 22 (2px short), then briefly 25
+ * (1px over, from adding a border the declared height already held).
+ */
+const LIST_ROW_HEIGHT = 24;
 
 function captionHeight(tileSize: number): number {
   return tileSize < COMPACT_TILE_WIDTH ? CARD_META_COMPACT : CARD_META_FULL;
@@ -76,7 +116,9 @@ export function AssetGrid({
   const isList = viewMode === 'list';
   const contentWidth = Math.max(0, size.width - GAP * 2);
   const tileWidth = isList ? Math.max(1, contentWidth) : thumbnailSize;
-  const tileHeight = isList ? LIST_ROW_HEIGHT : thumbnailSize + captionHeight(thumbnailSize);
+  const tileHeight = isList
+    ? LIST_ROW_HEIGHT
+    : thumbnailSize + captionHeight(thumbnailSize) + CARD_BORDER;
 
   const metrics = {
     containerWidth: contentWidth,
@@ -96,11 +138,13 @@ export function AssetGrid({
     [assets, columns, groupByType],
   );
 
-  const window = computeRowWindow(rows, metrics, scrollTop);
+  // Built once and handed to computeRowWindow, which would otherwise rebuild
+  // the same table on every scroll tick.
   const offsets = useMemo(
     () => buildOffsets(rows, metrics.tileHeight, metrics.gap),
     [rows, metrics.tileHeight, metrics.gap],
   );
+  const window = computeRowWindow(rows, metrics, scrollTop, undefined, offsets);
 
   useEffect(() => {
     onColumnsChange?.(columns);

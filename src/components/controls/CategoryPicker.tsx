@@ -6,21 +6,29 @@
  */
 import { type ReactElement, useState } from 'react';
 import { CloseIcon } from '../icons';
+import { Pressable } from './Pressable';
+import { dialogBodyHeight } from '../../utils/layout';
 
 interface CategoryPickerProps {
   readonly title: string;
   readonly folderName: string;
   readonly categories: readonly string[];
   readonly current?: string;
+  /** Measured panel height; the body needs an explicit one to scroll in UXP. */
+  readonly panelHeight: number;
   readonly onConfirm: (category: string) => void;
   readonly onCancel: () => void;
 }
+
+/** Header plus the confirm/cancel footer. See `dialogBodyHeight`. */
+const DIALOG_CHROME = 60;
 
 export function CategoryPicker({
   title,
   folderName,
   categories,
   current,
+  panelHeight,
   onConfirm,
   onCancel,
 }: CategoryPickerProps): ReactElement {
@@ -34,30 +42,40 @@ export function CategoryPicker({
       <div className="dialog__header row">
         <span className="dialog__title">{title}</span>
         <span className="spacer" />
-        <button className="button button--ghost button--icon" title="Cancel" onClick={onCancel}>
+        <Pressable className="button button--ghost button--icon" title="Cancel" onClick={onCancel}>
           <CloseIcon size={12} />
-        </button>
+        </Pressable>
       </div>
 
-      <div className="dialog__body scroll-y">
+      {/* Explicit height: an unbounded body grew with the category list and
+          pushed the confirm footer off the panel. See utils/layout.ts. */}
+      <div
+        className="dialog__body scroll-y"
+        style={{ height: `${dialogBodyHeight(panelHeight, DIALOG_CHROME)}px` }}
+      >
         <p className="dialog__note">
           What kind of assets does <strong>{folderName}</strong> hold? Libraries are grouped by
           category, so this is how you will find them later.
         </p>
 
         <div className="category-options">
+          {/*
+            Pressables: the chip's only selected-state signal is
+            `.chip[data-active]`, and a native UXP button discards it - so
+            tapping a category produced no visible change at all.
+          */}
           {categories.map((category) => (
-            <button
+            <Pressable
               key={category}
               className="chip chip--large"
-              data-active={chosen === category ? 'true' : 'false'}
+              active={chosen === category}
               onClick={() => {
                 setSelected(category);
                 setCustom('');
               }}
             >
               {category}
-            </button>
+            </Pressable>
           ))}
         </div>
 
@@ -77,16 +95,17 @@ export function CategoryPicker({
       </div>
 
       <div className="action-bar__row row gap-2">
-        <button className="button fill" onClick={onCancel}>
+        <Pressable className="button fill" onClick={onCancel}>
           Cancel
-        </button>
-        <button
+        </Pressable>
+        <Pressable
           className="button button--primary fill"
           disabled={!chosen}
+          title={chosen ? undefined : 'Pick or type a category first'}
           onClick={() => onConfirm(chosen)}
         >
           {current ? 'Move' : 'Add Library'}
-        </button>
+        </Pressable>
       </div>
     </div>
   );

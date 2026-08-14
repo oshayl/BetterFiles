@@ -19,6 +19,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   FolderIcon,
+  MoreGlyph,
   OfflineIcon,
   PlusIcon,
   StarIcon,
@@ -44,6 +45,7 @@ interface FolderSidebarProps {
   readonly onRevealFolder: (folderId: string) => void;
   readonly onToggleSubfolders: (folderId: string, include: boolean) => void;
   readonly onChangeCategory: (folderId: string) => void;
+  readonly onRenameFolder: (folderId: string) => void;
 }
 
 export function FolderSidebar(props: FolderSidebarProps): ReactElement {
@@ -104,6 +106,7 @@ function LibraryNode({
   onRevealFolder,
   onToggleSubfolders,
   onChangeCategory,
+  onRenameFolder,
 }: FolderSidebarProps & { folder: AssetFolder }): ReactElement {
   // Collapsed by default: the point of categories is to avoid a wall of tree.
   const [expanded, setExpanded] = useState(false);
@@ -114,18 +117,26 @@ function LibraryNode({
 
   return (
     <div className="tree-node">
-      <div
-        className="tree-row"
-        data-active={isActiveLibrary && activePathPrefix === '' ? 'true' : 'false'}
-        onClick={() => onSelectFolder(folder.id, '')}
-      >
-        <button
+      {/*
+        The row is a plain container holding three SIBLING controls, not a
+        Pressable wrapping two more. Nesting them put a `role="button"` inside
+        a `role="button"` - invalid ARIA, where a screen reader announces the
+        container's label over the child's - and gave every library three tab
+        stops instead of one, so a 20-library sidebar took 60 presses to cross.
+        It also broke Space as a page key for the tree's scroll region, because
+        Pressable calls preventDefault() for ' '.
+
+        The selectable part is `.tree-row__select`, which carries the row's
+        active state and keyboard activation. Anything added here that is
+        interactive must be a sibling of it, never a descendant.
+      */}
+      <div className="tree-row" data-active={isActiveLibrary && activePathPrefix === ''}>
+        <Pressable
           className="tree-row__twisty"
           title={expanded ? 'Collapse' : 'Expand'}
-          onClick={(event) => {
-            event.stopPropagation();
-            setExpanded((value) => !value);
-          }}
+          label={expanded ? `Collapse ${folder.displayName}` : `Expand ${folder.displayName}`}
+          stopPropagation
+          onClick={() => setExpanded((value) => !value)}
         >
           {subfolders.length > 0 ? (
             expanded ? (
@@ -136,86 +147,114 @@ function LibraryNode({
           ) : (
             <span className="tree-row__twisty-blank" />
           )}
-        </button>
+        </Pressable>
 
-        {folder.isAvailable ? <FolderIcon size={12} /> : <OfflineIcon size={12} />}
-
-        <span className="tree-row__label truncate" title={folder.nativePath}>
-          {folder.displayName}
-        </span>
-
-        {folder.assetCount != null && <span className="tree-row__count">{folder.assetCount}</span>}
-
-        {folder.isFavorite && <StarIcon size={12} filled />}
-
-        <button
-          className="tree-row__menu"
-          title="Library actions"
-          onClick={(event) => {
-            event.stopPropagation();
-            setMenuOpen((value) => !value);
-          }}
+        <Pressable
+          className="tree-row__select"
+          label={`Library ${folder.displayName}`}
+          active={isActiveLibrary && activePathPrefix === ''}
+          onClick={() => onSelectFolder(folder.id, '')}
         >
-          ...
-        </button>
+          {folder.isAvailable ? <FolderIcon size={12} /> : <OfflineIcon size={12} />}
+
+          <span className="tree-row__label truncate" title={folder.nativePath}>
+            {folder.displayName}
+          </span>
+
+          {folder.assetCount != null && (
+            <span className="tree-row__count">{folder.assetCount}</span>
+          )}
+
+          {folder.isFavorite && <StarIcon size={12} filled />}
+        </Pressable>
+
+        <Pressable
+          className="tree-row__menu"
+          title={`Actions for ${folder.displayName}`}
+          label={`Actions for ${folder.displayName}`}
+          active={menuOpen}
+          stopPropagation
+          onClick={() => setMenuOpen((value) => !value)}
+        >
+          <MoreGlyph />
+        </Pressable>
       </div>
 
       {!folder.isAvailable && (
-        <button className="tree-row__reconnect" onClick={() => onReconnectFolder(folder.id)}>
+        <Pressable
+          className="tree-row__reconnect"
+          title={`${folder.displayName} is unavailable - click to locate it again`}
+          onClick={() => onReconnectFolder(folder.id)}
+        >
           Unavailable - reconnect
-        </button>
+        </Pressable>
       )}
 
       {menuOpen && (
         <div className="tree-menu">
-          <button
+          <Pressable
+            className="tree-menu__item"
+            onClick={() => {
+              setMenuOpen(false);
+              onRenameFolder(folder.id);
+            }}
+          >
+            Rename Library
+          </Pressable>
+          <Pressable
+            className="tree-menu__item"
             onClick={() => {
               setMenuOpen(false);
               onChangeCategory(folder.id);
             }}
           >
             Change Category
-          </button>
-          <button
+          </Pressable>
+          <Pressable
+            className="tree-menu__item"
             onClick={() => {
               setMenuOpen(false);
               onRefreshFolder(folder.id);
             }}
           >
             Refresh
-          </button>
-          <button
+          </Pressable>
+          <Pressable
+            className="tree-menu__item"
             onClick={() => {
               setMenuOpen(false);
               onToggleFavorite(folder.id);
             }}
           >
             {folder.isFavorite ? 'Unfavourite' : 'Favourite'}
-          </button>
-          <button
+          </Pressable>
+          <Pressable
+            className="tree-menu__item"
             onClick={() => {
               setMenuOpen(false);
               onRevealFolder(folder.id);
             }}
           >
             Reveal in File Manager
-          </button>
-          <button
+          </Pressable>
+          <Pressable
+            className="tree-menu__item"
             onClick={() => {
               setMenuOpen(false);
               onToggleSubfolders(folder.id, !folder.includeSubfolders);
             }}
           >
             {folder.includeSubfolders ? 'Exclude Subfolders' : 'Include Subfolders'}
-          </button>
-          <button
+          </Pressable>
+          <Pressable
+            className="tree-menu__item tree-menu__item--danger"
             onClick={() => {
               setMenuOpen(false);
               onRemoveFolder(folder.id);
             }}
           >
             Remove Library
-          </button>
+          </Pressable>
         </div>
       )}
 
@@ -269,18 +308,18 @@ function SubfolderNode({
 
   return (
     <div className="tree-node">
+      {/* Siblings, not nested controls - see the note in LibraryNode. */}
       <div
         className="tree-row"
-        data-active={isActive ? 'true' : 'false'}
+        data-active={isActive}
         style={{ paddingLeft: `${depth * 12 + 6}px` }}
-        onClick={() => onSelectFolder(folderId, prefix)}
       >
-        <button
+        <Pressable
           className="tree-row__twisty"
-          onClick={(event) => {
-            event.stopPropagation();
-            setExpanded((value) => !value);
-          }}
+          title={hasChildren ? (expanded ? 'Collapse' : 'Expand') : undefined}
+          label={expanded ? `Collapse ${label}` : `Expand ${label}`}
+          stopPropagation
+          onClick={() => setExpanded((value) => !value)}
         >
           {hasChildren ? (
             expanded ? (
@@ -291,9 +330,16 @@ function SubfolderNode({
           ) : (
             <span className="tree-row__twisty-blank" />
           )}
-        </button>
+        </Pressable>
 
-        <span className="tree-row__label truncate">{label}</span>
+        <Pressable
+          className="tree-row__select"
+          label={`Subfolder ${label}`}
+          active={isActive}
+          onClick={() => onSelectFolder(folderId, prefix)}
+        >
+          <span className="tree-row__label truncate">{label}</span>
+        </Pressable>
       </div>
 
       {expanded &&

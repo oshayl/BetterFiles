@@ -6,6 +6,7 @@
  */
 import type { ReactElement, ReactNode } from 'react';
 import { FolderIcon, OfflineIcon, SearchIcon, WarningIcon } from '../icons';
+import { Pressable } from '../controls/Pressable';
 
 interface StateProps {
   readonly title: string;
@@ -21,9 +22,9 @@ export function StateMessage({ title, detail, icon, action }: StateProps): React
       <div className="state__title">{title}</div>
       {detail && <div className="state__detail">{detail}</div>}
       {action && (
-        <button className="button state__action" onClick={action.onClick}>
+        <Pressable className="button state__action" onClick={action.onClick}>
           {action.label}
-        </button>
+        </Pressable>
       )}
     </div>
   );

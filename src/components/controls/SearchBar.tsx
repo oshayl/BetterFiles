@@ -7,6 +7,7 @@
 import { type ReactElement, useEffect, useRef, useState } from 'react';
 import { useDebouncedValue } from '../hooks';
 import { CloseIcon, SearchIcon } from '../icons';
+import { Pressable } from './Pressable';
 
 interface SearchBarProps {
   readonly value: string;
@@ -65,9 +66,9 @@ export function SearchBar({
       {text !== '' && (
         <>
           <span className="search-bar__count">{resultCount.toLocaleString()}</span>
-          <button className="search-bar__clear" title="Clear search" onClick={() => setText('')}>
+          <Pressable className="search-bar__clear" title="Clear search" onClick={() => setText('')}>
             <CloseIcon size={12} />
-          </button>
+          </Pressable>
         </>
       )}
     </div>

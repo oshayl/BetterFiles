@@ -9,6 +9,7 @@
 import type { ReactElement } from 'react';
 import type { SortMode, ThumbnailBackground, TypeFilter, ViewMode } from '../../models/settings';
 import { GridIcon, ListIcon, RefreshIcon } from '../icons';
+import { Pressable } from './Pressable';
 
 const FILTERS: ReadonlyArray<{ value: TypeFilter; label: string }> = [
   { value: 'all', label: 'All types' },
@@ -28,17 +29,34 @@ const SORTS: ReadonlyArray<{ value: SortMode; label: string }> = [
   { value: 'added', label: 'Added' },
 ];
 
-/** Cycled by the BG button; order defines the cycle. */
-const BACKGROUNDS: ReadonlyArray<{ value: ThumbnailBackground; title: string }> = [
-  { value: 'checker', title: 'Backdrop: checkerboard' },
-  { value: 'light', title: 'Backdrop: light - for dark artwork' },
-  { value: 'dark', title: 'Backdrop: dark - for light artwork' },
+/** Cycled by the backdrop swatch; order defines the cycle. */
+const BACKGROUNDS: ReadonlyArray<{
+  value: ThumbnailBackground;
+  label: string;
+  hint: string;
+  /** Reuses the thumbnail backdrop classes, so the swatch cannot drift from it. */
+  swatch: string;
+}> = [
+  {
+    value: 'checker',
+    label: 'Checkerboard',
+    hint: 'shows transparency',
+    swatch: 'thumb-bg-checker',
+  },
+  { value: 'light', label: 'Light', hint: 'for dark artwork', swatch: 'thumb-bg-light' },
+  { value: 'dark', label: 'Dark', hint: 'for light artwork', swatch: 'thumb-bg-dark' },
 ];
 
 interface ToolbarProps {
   readonly typeFilter: TypeFilter;
   readonly sortMode: SortMode;
   readonly viewMode: ViewMode;
+  /**
+   * Grid mode to return to when leaving list view. Tracked by the caller so
+   * toggling to list and back does not overwrite a stored `largeGrid` with the
+   * hardcoded `compactGrid` this used to send.
+   */
+  readonly gridMode: ViewMode;
   readonly thumbnailBackground: ThumbnailBackground;
   readonly groupByType: boolean;
   /** True below ~300pt: sheds the least important controls. */
@@ -89,43 +107,54 @@ export function Toolbar(props: ToolbarProps): ReactElement {
 
       <span className="spacer" />
 
-      <button
-        className="button button--ghost button--icon"
-        title="Group by asset type"
-        data-active={props.groupByType ? 'true' : 'false'}
+      {/*
+        Pressables, not buttons: UXP's native button drops `data-active`, and
+        these two toggles have no other way to show they are on.
+      */}
+      <Pressable
+        className="button button--ghost button--text"
+        title="Group assets by type"
+        label="Group assets by type"
+        active={props.groupByType}
         onClick={props.onToggleGrouping}
       >
-        <span className="toolbar__glyph">G</span>
-      </button>
+        Group
+      </Pressable>
 
       {!isList && (
-        <button
+        <Pressable
           className="button button--ghost button--icon"
-          title={`${current.title} (click for ${next.value})`}
-          data-active={props.thumbnailBackground !== 'checker' ? 'true' : 'false'}
+          title={`Backdrop: ${current.label} (${current.hint}) - click for ${next.label}`}
+          label="Change thumbnail backdrop"
+          active={props.thumbnailBackground !== 'checker'}
           onClick={() => props.onThumbnailBackground(next.value)}
         >
-          <span className="toolbar__glyph">BG</span>
-        </button>
+          {/*
+            A swatch of the actual backdrop rather than the old "BG" glyph: the
+            control cycles three values, and a two-letter label said neither
+            which one is current nor what the next click does.
+          */}
+          <span className={`toolbar__swatch ${current.swatch}`} />
+        </Pressable>
       )}
 
-      <button
+      <Pressable
         className="button button--ghost button--icon"
         title={isList ? 'Switch to grid view' : 'Switch to list view'}
-        onClick={() => props.onViewMode(isList ? 'compactGrid' : 'list')}
+        onClick={() => props.onViewMode(isList ? props.gridMode : 'list')}
       >
         {isList ? <GridIcon size={12} /> : <ListIcon size={12} />}
-      </button>
+      </Pressable>
 
       {!props.compact && (
-        <button
+        <Pressable
           className="button button--ghost button--icon"
           title="Refresh this library"
           disabled={!props.canRefresh}
           onClick={props.onRefresh}
         >
           <RefreshIcon size={12} />
-        </button>
+        </Pressable>
       )}
     </div>
   );

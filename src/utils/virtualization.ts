@@ -45,8 +45,24 @@ export interface RowWindow {
 /** Rows rendered beyond the viewport, so fast scrolling does not flash empty. */
 const DEFAULT_OVERSCAN = 2;
 
-/** Height of a group heading row. Must match `.asset-group__header` in CSS. */
+/**
+ * Rendered height of a group heading row.
+ *
+ * Must match `.asset-group__header` in components.css, which declares
+ * `height: 22px` and a 1px `border-bottom`. The border is NOT added on top:
+ * `global.css` sets `* { box-sizing: border-box }`, so a declared height
+ * already contains the border and `offsetHeight` reads back 22, not 23.
+ *
+ * The `offsetHeight`/`clientHeight` distinction documented for the panel
+ * chrome is a different problem. There the rows carry no declared height and
+ * are content-sized, so the border genuinely adds to what they occupy. Here
+ * the height is declared, so it is the whole box. Mirroring a *declared*
+ * height means copying it verbatim.
+ */
 export const GROUP_HEADER_HEIGHT = 22;
+
+/** `.asset-group__header` margin-bottom (`--space-2`), in both view modes. */
+export const GROUP_HEADER_MARGIN = 8;
 
 /** Columns that fit, always at least one so a narrow panel still renders. */
 export function computeColumns(containerWidth: number, tileWidth: number, gap: number): number {
@@ -102,18 +118,20 @@ export function buildRows(
 }
 
 export function rowHeight(row: GridRow, tileHeight: number, gap: number): number {
-  return row.kind === 'header' ? GROUP_HEADER_HEIGHT + gap : tileHeight + gap;
+  /*
+   * A heading carries its own margin rather than borrowing the tile gap. In
+   * list mode the gap is 0, so the heading was measured 9px shorter than it
+   * renders, and every group pushed the window further out of step with the
+   * rows actually on screen.
+   */
+  return row.kind === 'header' ? GROUP_HEADER_HEIGHT + GROUP_HEADER_MARGIN : tileHeight + gap;
 }
 
 /**
  * Cumulative row offsets. `offsets[i]` is the top of row `i`; the final entry is
  * the total height.
  */
-export function buildOffsets(
-  rows: readonly GridRow[],
-  tileHeight: number,
-  gap: number,
-): number[] {
+export function buildOffsets(rows: readonly GridRow[], tileHeight: number, gap: number): number[] {
   const offsets = new Array<number>(rows.length + 1);
   offsets[0] = 0;
 
@@ -155,9 +173,17 @@ export function computeRowWindow(
   metrics: Omit<GridMetrics, 'itemCount'>,
   scrollTop: number,
   overscan: number = DEFAULT_OVERSCAN,
+  /**
+   * Prefix-sum table for `rows`. Callers that already hold a memoised one pass
+   * it in: this function runs on every scroll tick, and rebuilding it here made
+   * a 25,000-row list mode do two full passes per tick while the caller's memo
+   * saved nothing.
+   */
+  precomputedOffsets?: readonly number[],
 ): RowWindow {
   const columns = computeColumns(metrics.containerWidth, metrics.tileWidth, metrics.gap);
-  const offsets = buildOffsets(rows, metrics.tileHeight, metrics.gap);
+  const offsets =
+    precomputedOffsets ?? buildOffsets(rows, metrics.tileHeight, metrics.gap);
   const totalHeight = offsets[rows.length] ?? 0;
 
   if (rows.length === 0) {

@@ -4,10 +4,11 @@
  * Insert is the single primary action - an inverted white block, the only
  * high-contrast element in the panel.
  */
-import { type ReactElement, useState } from 'react';
+import { type ReactElement, useEffect, useState } from 'react';
 import type { AssetRecord } from '../../models/asset';
 import type { PlacementMode } from '../../models/import-options';
 import { Pressable } from '../controls/Pressable';
+import { MoreGlyph } from '../icons';
 
 interface ActionBarProps {
   readonly asset: AssetRecord | null;
@@ -33,29 +34,41 @@ export function ActionBar({
   const [menuOpen, setMenuOpen] = useState(false);
   const disabled = asset == null || inserting;
 
+  /*
+   * The menu is only *hidden* while `disabled`, not closed. Opening it, then
+   * inserting by double-click, made `disabled` true and hid it - and when the
+   * insert finished it reappeared on its own, over the action bar, without
+   * being clicked. Same after Escape cleared the selection.
+   */
+  useEffect(() => {
+    if (disabled) setMenuOpen(false);
+  }, [disabled]);
+
   return (
     <div className="action-bar no-shrink" data-measure="actionBar">
       {menuOpen && !disabled && (
         <div className="action-menu">
           {MORE_ACTIONS.map((action) => (
-            <button
+            <Pressable
               key={action.mode}
+              className="action-menu__item"
               onClick={() => {
                 setMenuOpen(false);
                 onInsert(action.mode);
               }}
             >
               {action.label}
-            </button>
+            </Pressable>
           ))}
-          <button
+          <Pressable
+            className="action-menu__item"
             onClick={() => {
               setMenuOpen(false);
               onReveal();
             }}
           >
             Reveal in File Manager
-          </button>
+          </Pressable>
         </div>
       )}
 
@@ -75,12 +88,14 @@ export function ActionBar({
         </Pressable>
 
         <Pressable
-          className="button"
+          className="button button--icon"
           disabled={disabled}
           title="More insert options"
+          label="More insert options"
+          active={menuOpen}
           onClick={() => setMenuOpen((value) => !value)}
         >
-          ...
+          <MoreGlyph />
         </Pressable>
       </div>
     </div>

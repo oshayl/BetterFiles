@@ -39,8 +39,8 @@
    * applies when the user has it installed. The rest covers macOS and Windows.
    */
   --font-ui:
-    Inter, 'SF Pro Text', 'SF Pro Display', -apple-system, 'Segoe UI',
-    'Helvetica Neue', Arial, sans-serif;
+    Inter, 'SF Pro Text', 'SF Pro Display', -apple-system, 'Segoe UI', 'Helvetica Neue', Arial,
+    sans-serif;
   --font-mono: 'SF Mono', 'Cascadia Mono', Consolas, 'Courier New', monospace;
 
   --font-size-xs: 10px;
@@ -106,6 +106,13 @@
   --color-border-strong: #9a9a9a;
   --color-border-active: #000000;
   --color-active: #000000;
+  /*
+   * Hover for the inverted primary button. It must stay far enough from
+   * `--color-text-inverse` to keep the label readable, so it moves *away* from
+   * white here and away from black in the dark theme - a single hardcoded grey
+   * cannot serve both.
+   */
+  --color-active-hover: #2e2e2e;
 
   --color-danger: #000000;
   --color-danger-surface: #ebebeb;
@@ -135,6 +142,7 @@
   --color-border-strong: #4b4b4b;
   --color-border-active: #ffffff;
   --color-active: #ffffff;
+  --color-active-hover: #d8d8d8;
 
   --color-danger: #ffffff;
   --color-danger-surface: #2a2a2a;

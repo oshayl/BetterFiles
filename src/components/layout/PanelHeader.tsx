@@ -10,6 +10,7 @@ import type { ReactElement } from 'react';
 import type { IndexingState } from '../../app/store';
 import type { Theme } from '../../models/settings';
 import { SettingsIcon, SidebarIcon, ThemeIcon, ToolsIcon } from '../icons';
+import { Pressable } from '../controls/Pressable';
 
 interface PanelHeaderProps {
   readonly indexing: IndexingState | null;
@@ -34,14 +35,20 @@ export function PanelHeader({
 }: PanelHeaderProps): ReactElement {
   return (
     <div className="panel-header no-shrink" data-measure="header">
-      <button
+      {/*
+        Pressables, not buttons. A native UXP button flattens its children into
+        one text label, and these icons are background-image spans with no text
+        - as buttons they rendered as empty grey pills, and `data-active` (the
+        only signal that the sidebar is showing) was dropped with them.
+      */}
+      <Pressable
         className="button button--ghost button--icon"
         title={sidebarVisible ? 'Hide libraries' : 'Show libraries'}
-        data-active={sidebarVisible ? 'true' : 'false'}
+        active={sidebarVisible}
         onClick={onToggleSidebar}
       >
         <SidebarIcon size={16} />
-      </button>
+      </Pressable>
 
       {!compact && <span className="panel-header__title">ASSET BROWSER</span>}
 
@@ -53,29 +60,29 @@ export function PanelHeader({
 
       <span className="spacer" />
 
-      <button
+      <Pressable
         className="button button--ghost button--icon"
         title={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
         onClick={onToggleTheme}
       >
         <ThemeIcon size={16} dark={theme === 'light'} />
-      </button>
+      </Pressable>
 
-      <button
+      <Pressable
         className="button button--ghost button--icon"
         title="Quick tools"
         onClick={onOpenTools}
       >
         <ToolsIcon size={16} />
-      </button>
+      </Pressable>
 
-      <button
+      <Pressable
         className="button button--ghost button--icon"
         title="Settings"
         onClick={onOpenSettings}
       >
         <SettingsIcon size={16} />
-      </button>
+      </Pressable>
     </div>
   );
 }

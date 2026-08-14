@@ -10,6 +10,7 @@ import type { AssetRecord } from '../../models/asset';
 import type { ThumbnailBackground } from '../../models/settings';
 import { AssetThumbnail } from './AssetThumbnail';
 import { StarIcon } from '../icons';
+import { Pressable } from '../controls/Pressable';
 import { formatFileSize } from '../../utils/file-types';
 
 /**
@@ -55,18 +56,20 @@ function AssetCardImpl({
 
       <span className="asset-card__badge">{asset.extension.toUpperCase()}</span>
 
-      <button
+      {/*
+        `stopPropagation` covers double-click as well as click. Stopping only
+        click left the second click of a quick double-toggle bubbling to the
+        tile's `onDoubleClick`, which inserts the asset into the open document.
+      */}
+      <Pressable
         className="asset-card__favorite"
-        data-active={asset.isFavorite ? 'true' : 'false'}
+        active={asset.isFavorite}
         title={asset.isFavorite ? 'Remove from favourites' : 'Add to favourites'}
-        onClick={(event) => {
-          // Favouriting must not also select or insert.
-          event.stopPropagation();
-          onToggleFavorite(asset.id);
-        }}
+        stopPropagation
+        onClick={() => onToggleFavorite(asset.id)}
       >
         <StarIcon size={12} filled={asset.isFavorite} />
-      </button>
+      </Pressable>
 
       <div className="asset-card__meta">
         <div className="asset-card__name truncate">{asset.name}</div>

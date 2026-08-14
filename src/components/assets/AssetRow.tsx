@@ -7,6 +7,7 @@
 import { type ReactElement, memo } from 'react';
 import type { AssetRecord } from '../../models/asset';
 import { StarIcon } from '../icons';
+import { Pressable } from '../controls/Pressable';
 import { formatFileSize, formatModifiedDate } from '../../utils/file-types';
 
 interface AssetRowProps {
@@ -32,17 +33,16 @@ function AssetRowImpl({
       onDoubleClick={() => onInsert(asset.id)}
       title={asset.relativePath}
     >
-      <button
+      {/* See AssetCard: stopping click alone let a double-toggle insert. */}
+      <Pressable
         className="asset-row__favorite"
-        data-active={asset.isFavorite ? 'true' : 'false'}
+        active={asset.isFavorite}
         title={asset.isFavorite ? 'Remove from favourites' : 'Add to favourites'}
-        onClick={(event) => {
-          event.stopPropagation();
-          onToggleFavorite(asset.id);
-        }}
+        stopPropagation
+        onClick={() => onToggleFavorite(asset.id)}
       >
         <StarIcon size={12} filled={asset.isFavorite} />
-      </button>
+      </Pressable>
 
       <span className="asset-row__name truncate">{asset.name}</span>
       <span className="asset-row__badge">{asset.extension.toUpperCase()}</span>
